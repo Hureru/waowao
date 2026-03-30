@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-const importModule = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<Record<string, unknown>>
+type ApiRouteContractGuardModule = {
+  API_HANDLER_ALLOWLIST: Set<string>
+  PUBLIC_ROUTE_ALLOWLIST: Set<string>
+  inspectRouteContract: (relPath: string, content: string) => string[]
+}
 
 async function loadGuardModule() {
-  return await importModule(new URL('../../../scripts/guards/api-route-contract-guard.mjs', import.meta.url).href)
+  const moduleHref = new URL('../../../scripts/guards/api-route-contract-guard.mjs', import.meta.url).href
+  return (await import(/* @vite-ignore */ moduleHref)) as ApiRouteContractGuardModule
 }
 
 describe('api route contract guard', () => {

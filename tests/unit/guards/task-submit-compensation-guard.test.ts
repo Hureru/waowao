@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-const importModule = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<Record<string, unknown>>
+type TaskSubmitCompensationGuardModule = {
+  inspectTaskSubmitCompensation: (relPath: string, content: string) => string[]
+}
 
 async function loadGuardModule() {
-  return await importModule(new URL('../../../scripts/guards/task-submit-compensation-guard.mjs', import.meta.url).href)
+  const moduleHref = new URL('../../../scripts/guards/task-submit-compensation-guard.mjs', import.meta.url).href
+  return (await import(/* @vite-ignore */ moduleHref)) as TaskSubmitCompensationGuardModule
 }
 
 describe('task submit compensation guard', () => {

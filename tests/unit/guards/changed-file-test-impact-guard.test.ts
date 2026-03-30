@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-const importModule = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<Record<string, unknown>>
+type ChangedFileTestImpactGuardModule = {
+  inspectChangedFiles: (changedFiles: string[]) => string[]
+}
 
 async function loadGuardModule() {
-  return await importModule(new URL('../../../scripts/guards/changed-file-test-impact-guard.mjs', import.meta.url).href)
+  const moduleHref = new URL('../../../scripts/guards/changed-file-test-impact-guard.mjs', import.meta.url).href
+  return (await import(/* @vite-ignore */ moduleHref)) as ChangedFileTestImpactGuardModule
 }
 
 describe('changed-file-test-impact-guard', () => {
