@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { inspectTaskSubmitCompensation } from '../../../scripts/guards/task-submit-compensation-guard.mjs'
+
+const importModule = new Function('specifier', 'return import(specifier)') as (
+  specifier: string,
+) => Promise<Record<string, unknown>>
+
+async function loadGuardModule() {
+  return await importModule(new URL('../../../scripts/guards/task-submit-compensation-guard.mjs', import.meta.url).href)
+}
 
 describe('task submit compensation guard', () => {
-  it('passes routes that create data before submitTask and define rollback handling', () => {
+  it('passes routes that create data before submitTask and define rollback handling', async () => {
+    const { inspectTaskSubmitCompensation } = await loadGuardModule()
     const content = `
       async function rollbackCreatedRecord() {}
       export const POST = apiHandler(async () => {
@@ -21,12 +29,14 @@ describe('task submit compensation guard', () => {
     ).toEqual([])
   })
 
-  it('ignores routes that do not combine create and submitTask', () => {
+  it('ignores routes that do not combine create and submitTask', async () => {
+    const { inspectTaskSubmitCompensation } = await loadGuardModule()
     expect(inspectTaskSubmitCompensation('src/app/api/user/api-config/route.ts', 'await submitTask({})')).toEqual([])
     expect(inspectTaskSubmitCompensation('src/app/api/projects/route.ts', 'await prisma.project.create({ data: {} })')).toEqual([])
   })
 
-  it('flags routes that create data before submitTask without compensation marker', () => {
+  it('flags routes that create data before submitTask without compensation marker', async () => {
+    const { inspectTaskSubmitCompensation } = await loadGuardModule()
     const content = `
       export const POST = apiHandler(async () => {
         await prisma.panel.create({ data: {} })

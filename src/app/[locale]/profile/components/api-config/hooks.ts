@@ -591,8 +591,8 @@ export function useProviders(): UseProvidersReturn {
             latestProvidersRef.current = next
 
             const providerKey = getProviderKey(provider.id)
-            if (providerKey === 'gemini-compatible') {
-                // 保存后直接 refetch：后端注入带完整 capabilities 的 Google 预设模型（disabled）
+            if (providerKey === 'gemini-compatible' || providerKey === 'kie') {
+                // 保存后直接 refetch：后端会为这类动态 provider 注入 starter presets（disabled）
                 void performSave(undefined, true).then(() => void fetchConfig())
             } else {
                 void performSave(undefined, true)

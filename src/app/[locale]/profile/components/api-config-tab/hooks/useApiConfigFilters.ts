@@ -13,7 +13,7 @@ interface EnabledModelOption extends CustomModel {
   providerName: string
 }
 
-const DYNAMIC_PROVIDER_PREFIXES = ['gemini-compatible', 'openai-compatible']
+const DYNAMIC_PROVIDER_PREFIXES = ['gemini-compatible', 'openai-compatible', 'kie']
 const ALWAYS_SHOW_PROVIDERS: string[] = []
 /** 完全不在 UI 中展示的 provider（既不在主列表，也不在折叠区） */
 const HIDDEN_PROVIDER_KEYS = new Set(['siliconflow'])
@@ -29,6 +29,7 @@ const MODEL_PROVIDER_KEYS = [
   'minimax',
   'vidu',
   'fal',
+  'kie',
   'gemini-compatible',
   'openai-compatible',
 ]

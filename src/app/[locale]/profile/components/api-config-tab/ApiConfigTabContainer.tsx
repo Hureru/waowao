@@ -9,6 +9,7 @@ import { apiFetch } from '@/lib/api-fetch'
 import {
   encodeModelKey,
   getProviderDisplayName,
+  KIE_OFFICIAL_BASE_URL,
   parseModelKey,
   useProviders,
 } from '../api-config'
@@ -28,7 +29,7 @@ interface TestStep {
 }
 type TestStatus = 'idle' | 'testing' | 'passed' | 'failed'
 
-type CustomProviderType = 'gemini-compatible' | 'openai-compatible'
+type CustomProviderType = 'gemini-compatible' | 'openai-compatible' | 'kie'
 
 const Icons = {
   settings: () => (
@@ -160,15 +161,21 @@ export function ApiConfigTabContainer() {
       : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
     const providerId = `${newGeminiProvider.apiType}:${uuid}`
     const name = newGeminiProvider.name.trim()
-    const baseUrl = newGeminiProvider.baseUrl.trim()
+    const baseUrl = newGeminiProvider.apiType === 'kie'
+      ? KIE_OFFICIAL_BASE_URL
+      : newGeminiProvider.baseUrl.trim()
     const apiKey = newGeminiProvider.apiKey.trim()
 
     addProvider({
       id: providerId,
-      name,
+      name: name || (newGeminiProvider.apiType === 'kie' ? 'Kie.ai' : name),
       baseUrl,
       apiKey,
-      apiMode: newGeminiProvider.apiType === 'openai-compatible' ? 'openai-official' : 'gemini-sdk',
+      apiMode: newGeminiProvider.apiType === 'openai-compatible'
+        ? 'openai-official'
+        : newGeminiProvider.apiType === 'gemini-compatible'
+          ? 'gemini-sdk'
+          : undefined,
     })
 
     setNewGeminiProvider({ name: '', baseUrl: '', apiKey: '', apiType: 'gemini-compatible' })
@@ -178,7 +185,8 @@ export function ApiConfigTabContainer() {
   }, [newGeminiProvider, addProvider])
 
   const handleAddGeminiProvider = useCallback(async () => {
-    if (!newGeminiProvider.name || !newGeminiProvider.baseUrl) {
+    const requiresBaseUrl = newGeminiProvider.apiType !== 'kie'
+    if (!newGeminiProvider.name || (requiresBaseUrl && !newGeminiProvider.baseUrl)) {
       alert(tp('fillRequired'))
       return
     }
@@ -192,7 +200,7 @@ export function ApiConfigTabContainer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiType: newGeminiProvider.apiType,
-          baseUrl: newGeminiProvider.baseUrl.trim(),
+          ...(requiresBaseUrl ? { baseUrl: newGeminiProvider.baseUrl.trim() } : {}),
           apiKey: newGeminiProvider.apiKey.trim(),
         }),
       })
@@ -362,9 +370,17 @@ export function ApiConfigTabContainer() {
               <select
                 value={newGeminiProvider.apiType}
                 onChange={(event) =>
-                  setNewGeminiProvider({
-                    ...newGeminiProvider,
-                    apiType: event.target.value as CustomProviderType,
+                  setNewGeminiProvider((previous) => {
+                    const nextType = event.target.value as CustomProviderType
+                    return {
+                      ...previous,
+                      apiType: nextType,
+                      baseUrl: nextType === 'kie'
+                        ? KIE_OFFICIAL_BASE_URL
+                        : previous.apiType === 'kie'
+                          ? ''
+                          : previous.baseUrl,
+                    }
                   })
                 }
                 disabled={testStatus === 'testing'}
@@ -372,6 +388,7 @@ export function ApiConfigTabContainer() {
               >
                 <option value="gemini-compatible">{t('apiTypeGeminiCompatible')}</option>
                 <option value="openai-compatible">{t('apiTypeOpenAICompatible')}</option>
+                <option value="kie">{t('apiTypeKie')}</option>
               </select>
               <div className="pointer-events-none absolute right-3 top-3 text-[var(--glass-text-tertiary)]">
                 <Icons.chevronDown />
@@ -411,7 +428,7 @@ export function ApiConfigTabContainer() {
                   baseUrl: event.target.value,
                 })
               }
-              disabled={testStatus === 'testing'}
+              disabled={testStatus === 'testing' || newGeminiProvider.apiType === 'kie'}
               placeholder={t('baseUrl')}
               className="glass-input-base w-full px-3 py-2.5 text-sm font-mono"
             />

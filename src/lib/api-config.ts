@@ -57,12 +57,17 @@ interface CustomProvider {
   gatewayRoute?: GatewayRouteType
 }
 
+const KIE_OFFICIAL_BASE_URL = 'https://api.kie.ai'
+
 type LlmProtocolType = 'responses' | 'chat-completions'
 
 function normalizeProviderBaseUrl(providerId: string, rawBaseUrl?: string): string | undefined {
   const providerKey = getProviderKey(providerId)
   if (providerKey === 'minimax') {
     return 'https://api.minimaxi.com/v1'
+  }
+  if (providerKey === 'kie') {
+    return KIE_OFFICIAL_BASE_URL
   }
 
   const baseUrl = readTrimmedString(rawBaseUrl)
@@ -156,6 +161,9 @@ function parseCustomProviders(rawProviders: string | null | undefined): CustomPr
       apiMode = undefined
     } else if (apiModeRaw === 'gemini-sdk' || apiModeRaw === 'openai-official') {
       if (providerKey === 'gemini-compatible' && apiModeRaw === 'openai-official') {
+        throw new Error(`PROVIDER_API_MODE_INVALID: providers[${index}].apiMode`)
+      }
+      if (providerKey === 'kie') {
         throw new Error(`PROVIDER_API_MODE_INVALID: providers[${index}].apiMode`)
       }
       apiMode = apiModeRaw

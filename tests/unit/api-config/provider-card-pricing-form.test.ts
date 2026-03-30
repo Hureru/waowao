@@ -14,6 +14,10 @@ describe('provider card pricing form behavior', () => {
     expect(getAddableModelTypesForProvider('openai-compatible:oa-1')).toEqual(['llm', 'image', 'video'])
   })
 
+  it('allows kie provider to add image/video only', () => {
+    expect(getAddableModelTypesForProvider('kie:node-1')).toEqual(['image', 'video'])
+  })
+
   it('shows llm/image/video tabs by default for openai-compatible even with only image models', () => {
     const visible = getVisibleModelTypesForProvider(
       'openai-compatible:oa-1',
@@ -33,6 +37,27 @@ describe('provider card pricing form behavior', () => {
     )
 
     expect(visible).toEqual(['llm', 'image', 'video'])
+  })
+
+  it('shows image/video tabs by default for kie even with only image models', () => {
+    const visible = getVisibleModelTypesForProvider(
+      'kie:node-1',
+      {
+        image: [
+          {
+            modelId: 'google/imagen4',
+            modelKey: 'kie:node-1::google/imagen4',
+            name: 'Imagen 4',
+            type: 'image',
+            provider: 'kie:node-1',
+            price: 0,
+            enabled: true,
+          },
+        ],
+      },
+    )
+
+    expect(visible).toEqual(['image', 'video'])
   })
 
   it('shows the openai-compatible video hint only for openai-compatible video add forms', () => {
@@ -152,6 +177,19 @@ describe('provider card pricing form behavior', () => {
     expect(payload).toEqual({
       apiType: 'ark',
       apiKey: 'ark-key',
+    })
+  })
+
+  it('omits baseUrl for kie provider connection test payload', () => {
+    const payload = buildProviderConnectionPayload({
+      providerKey: 'kie',
+      apiKey: ' kie-key ',
+      baseUrl: ' https://api.kie.ai ',
+    })
+
+    expect(payload).toEqual({
+      apiType: 'kie',
+      apiKey: 'kie-key',
     })
   })
 

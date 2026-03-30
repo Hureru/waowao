@@ -21,13 +21,16 @@ type PresetProviderType = 'ark' | 'google' | 'openrouter' | 'minimax' | 'fal' | 
   | 'bailian'
   | 'siliconflow'
 type CompatibleProviderType = 'openai-compatible' | 'gemini-compatible'
+type OfficialMarketProviderType = 'kie'
 
 type TestProviderPayload = {
-  apiType: CompatibleProviderType | PresetProviderType
+  apiType: CompatibleProviderType | PresetProviderType | OfficialMarketProviderType
   baseUrl?: string
   apiKey: string
   llmModel?: string
 }
+
+const KIE_OFFICIAL_BASE_URL = 'https://api.kie.ai'
 
 function classifyProbeFailure(status: number): { status: TestStepStatus; message: string } {
   if (status === 401 || status === 403) {
@@ -329,6 +332,59 @@ async function testCompatibleProvider(baseUrl: string, apiKey: string, llmModel?
   return {
     success: llmStep.status === 'pass',
     steps,
+  }
+}
+
+async function testKieProvider(apiKey: string): Promise<TestProviderResult> {
+  try {
+    const response = await fetch(`${KIE_OFFICIAL_BASE_URL}/api/v1/chat/credit`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: AbortSignal.timeout(15_000),
+    })
+    const raw = await response.text().catch(() => '')
+
+    if (!response.ok) {
+      const classified = classifyProbeFailure(response.status)
+      return {
+        success: false,
+        steps: [{
+          name: 'credits',
+          status: classified.status,
+          message: classified.message,
+          detail: raw.slice(0, 500),
+        }],
+      }
+    }
+
+    let payload: unknown = null
+    if (raw.trim()) {
+      try {
+        payload = JSON.parse(raw) as unknown
+      } catch {
+        payload = null
+      }
+    }
+
+    return {
+      success: true,
+      steps: [{
+        name: 'credits',
+        status: 'pass',
+        message: parseCreditsMessage(payload) || 'Kie.ai credits endpoint reachable',
+      }],
+    }
+  } catch (error) {
+    return {
+      success: false,
+      steps: [{
+        name: 'credits',
+        status: 'fail',
+        message: toNetworkErrorMessage(error),
+      }],
+    }
   }
 }
 
@@ -871,6 +927,8 @@ export async function testProviderConnection(payload: TestProviderPayload): Prom
       return testBailianProvider(apiKey)
     case 'siliconflow':
       return testSiliconFlowProvider(apiKey)
+    case 'kie':
+      return testKieProvider(apiKey)
     default:
       return {
         success: false,

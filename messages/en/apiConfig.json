@@ -110,6 +110,7 @@
   "apiType": "API Type",
   "apiTypeGeminiCompatible": "Gemini Compatible",
   "apiTypeOpenAICompatible": "OpenAI Compatible",
+  "apiTypeKie": "Kie.ai",
   "apiTypeGeminiHint": "Uses Google SDK",
   "otherProviders": "Other Settings",
   "audioCategory": "Audio",
@@ -176,6 +177,8 @@
       "vidu_step1": "Go to the Vidu platform and click 'Create API Key'",
       "openai_compatible_step1": "Enter any OpenAI-compatible service Base URL and API key",
       "gemini_compatible_step1": "Enter any Gemini-compatible service Base URL and API key",
+      "kie_step1": "Open the Kie.ai Market docs, confirm the target model ID, and create an API key",
+      "kie_step2": "Kie.ai uses the fixed Base URL https://api.kie.ai, so only the API key needs to be configured",
       "bailian_step1": "Go to Alibaba Cloud Bailian console and get an API Key",
       "siliconflow_step1": "Go to SiliconFlow console and create an API Key"
     }

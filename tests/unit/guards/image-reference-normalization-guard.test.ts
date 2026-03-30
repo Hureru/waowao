@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import {
-  NORMALIZATION_HELPER_ALLOWLIST,
-  inspectImageReferenceNormalization,
-} from '../../../scripts/guards/image-reference-normalization-guard.mjs'
+
+const importModule = new Function('specifier', 'return import(specifier)') as (
+  specifier: string,
+) => Promise<Record<string, unknown>>
+
+async function loadGuardModule() {
+  return await importModule(new URL('../../../scripts/guards/image-reference-normalization-guard.mjs', import.meta.url).href)
+}
 
 describe('image reference normalization guard', () => {
-  it('allows shared helper exceptions explicitly', () => {
+  it('allows shared helper exceptions explicitly', async () => {
+    const {
+      NORMALIZATION_HELPER_ALLOWLIST,
+      inspectImageReferenceNormalization,
+    } = await loadGuardModule()
+
     expect(NORMALIZATION_HELPER_ALLOWLIST.has('src/lib/workers/handlers/image-task-handler-shared.ts')).toBe(true)
     expect(
       inspectImageReferenceNormalization(
@@ -15,7 +24,8 @@ describe('image reference normalization guard', () => {
     ).toEqual([])
   })
 
-  it('passes handlers that normalize reference images before generation', () => {
+  it('passes handlers that normalize reference images before generation', async () => {
+    const { inspectImageReferenceNormalization } = await loadGuardModule()
     const content = `
       import { normalizeReferenceImagesForGeneration } from '@/lib/media/outbound-image'
       async function run() {
@@ -33,7 +43,8 @@ describe('image reference normalization guard', () => {
     ).toEqual([])
   })
 
-  it('flags handlers that send referenceImages without normalization markers', () => {
+  it('flags handlers that send referenceImages without normalization markers', async () => {
+    const { inspectImageReferenceNormalization } = await loadGuardModule()
     const content = `
       async function run() {
         return await resolveImageSourceFromGeneration(job, {

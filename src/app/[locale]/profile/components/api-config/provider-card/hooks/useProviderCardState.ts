@@ -187,6 +187,13 @@ export function buildProviderConnectionPayload(params: {
     }
   }
 
+  if (params.providerKey === 'kie') {
+    return {
+      apiType: params.providerKey,
+      apiKey,
+    }
+  }
+
   return {
     apiType: params.providerKey,
     apiKey,

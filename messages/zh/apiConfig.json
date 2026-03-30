@@ -110,6 +110,7 @@
   "apiType": "API 类型",
   "apiTypeGeminiCompatible": "Gemini 兼容",
   "apiTypeOpenAICompatible": "OpenAI 兼容",
+  "apiTypeKie": "Kie.ai",
   "apiTypeGeminiHint": "使用 Google SDK",
   "otherProviders": "其他配置",
   "audioCategory": "音频",
@@ -176,6 +177,8 @@
       "vidu_step1": "进入生数科技 Vidu 平台，点击「新建 API Key」",
       "openai_compatible_step1": "填写任意 OpenAI 协议兼容服务的 Base URL 与 API Key",
       "gemini_compatible_step1": "填写任意 Gemini 协议兼容服务的 Base URL 与 API Key",
+      "kie_step1": "打开 Kie.ai Market 文档，确认目标模型 ID 并创建 API Key",
+      "kie_step2": "Kie.ai 使用固定 Base URL：https://api.kie.ai，只需配置 API Key",
       "bailian_step1": "进入阿里云百炼平台，获取 API Key",
       "siliconflow_step1": "进入硅基流动控制台，创建 API Key"
     }

@@ -8,6 +8,7 @@ import {
   type VideoGenerateParams,
 } from './base'
 import { generateBailianAudio, generateBailianImage, generateBailianVideo } from '@/lib/providers/bailian'
+import { generateKieImage, generateKieVideo } from '@/lib/providers/kie'
 import { generateSiliconFlowAudio, generateSiliconFlowImage, generateSiliconFlowVideo } from '@/lib/providers/siliconflow'
 
 export class BailianImageGenerator extends BaseImageGenerator {
@@ -73,6 +74,44 @@ export class SiliconFlowVideoGenerator extends BaseVideoGenerator {
     const modelKey = typeof params.options?.modelKey === 'string' ? params.options.modelKey : ''
     const provider = typeof params.options?.provider === 'string' ? params.options.provider : 'siliconflow'
     return await generateSiliconFlowVideo({
+      userId: params.userId,
+      imageUrl: params.imageUrl,
+      prompt: params.prompt,
+      options: {
+        ...params.options,
+        provider,
+        modelId,
+        modelKey,
+      },
+    })
+  }
+}
+
+export class KieImageGenerator extends BaseImageGenerator {
+  protected async doGenerate(params: ImageGenerateParams): Promise<GenerateResult> {
+    const modelId = typeof params.options?.modelId === 'string' ? params.options.modelId : ''
+    const modelKey = typeof params.options?.modelKey === 'string' ? params.options.modelKey : ''
+    const provider = typeof params.options?.provider === 'string' ? params.options.provider : 'kie'
+    return await generateKieImage({
+      userId: params.userId,
+      prompt: params.prompt,
+      referenceImages: params.referenceImages,
+      options: {
+        ...params.options,
+        provider,
+        modelId,
+        modelKey,
+      },
+    })
+  }
+}
+
+export class KieVideoGenerator extends BaseVideoGenerator {
+  protected async doGenerate(params: VideoGenerateParams): Promise<GenerateResult> {
+    const modelId = typeof params.options?.modelId === 'string' ? params.options.modelId : ''
+    const modelKey = typeof params.options?.modelKey === 'string' ? params.options.modelKey : ''
+    const provider = typeof params.options?.provider === 'string' ? params.options.provider : 'kie'
+    return await generateKieVideo({
       userId: params.userId,
       imageUrl: params.imageUrl,
       prompt: params.prompt,

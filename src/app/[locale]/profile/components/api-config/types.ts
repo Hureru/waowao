@@ -24,6 +24,8 @@ export interface Provider {
     gatewayRoute?: 'official' | 'openai-compat'
 }
 
+export const KIE_OFFICIAL_BASE_URL = 'https://api.kie.ai'
+
 export interface LlmCustomPricing {
     inputPerMillion?: number
     outputPerMillion?: number
@@ -373,6 +375,19 @@ export const PROVIDER_TUTORIALS: ProviderTutorial[] = [
         ]
     },
     {
+        providerId: 'kie',
+        steps: [
+            {
+                text: 'kie_step1',
+                url: 'https://docs.kie.ai/market/quickstart'
+            },
+            {
+                text: 'kie_step2',
+                url: 'https://docs.kie.ai/common-api/quickstart'
+            }
+        ]
+    },
+    {
         providerId: 'bailian',
         steps: [
             {
@@ -411,4 +426,14 @@ export function getGoogleCompatiblePresetModels(providerId: string): PresetModel
     return PRESET_MODELS
         .filter((m) => m.provider === 'google' && !m.modelId.endsWith('-batch'))
         .map((m) => ({ ...m, provider: providerId }))
+}
+
+export function getKieStarterPresetModels(providerId: string): PresetModel[] {
+    return [
+        { modelId: 'google/imagen4', name: 'Imagen 4', type: 'image', provider: providerId },
+        { modelId: 'google/imagen4-fast', name: 'Imagen 4 Fast', type: 'image', provider: providerId },
+        { modelId: 'sora-2-image-to-video', name: 'Sora 2 I2V', type: 'video', provider: providerId },
+        { modelId: 'sora-2-text-to-video', name: 'Sora 2 T2V', type: 'video', provider: providerId },
+        { modelId: 'kling-2.6/image-to-video', name: 'Kling 2.6 I2V', type: 'video', provider: providerId },
+    ]
 }

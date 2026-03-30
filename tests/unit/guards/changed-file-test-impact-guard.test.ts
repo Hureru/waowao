@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { inspectChangedFiles } from '../../../scripts/guards/changed-file-test-impact-guard.mjs'
+
+const importModule = new Function('specifier', 'return import(specifier)') as (
+  specifier: string,
+) => Promise<Record<string, unknown>>
+
+async function loadGuardModule() {
+  return await importModule(new URL('../../../scripts/guards/changed-file-test-impact-guard.mjs', import.meta.url).href)
+}
 
 describe('changed-file-test-impact-guard', () => {
-  it('requires api changes to be paired with contract, system, or regression tests', () => {
+  it('requires api changes to be paired with contract, system, or regression tests', async () => {
+    const { inspectChangedFiles } = await loadGuardModule()
     const violations = inspectChangedFiles([
       'src/app/api/novel-promotion/[projectId]/generate-image/route.ts',
     ])
@@ -11,7 +19,8 @@ describe('changed-file-test-impact-guard', () => {
     ])
   })
 
-  it('accepts worker changes when system tests are updated together', () => {
+  it('accepts worker changes when system tests are updated together', async () => {
+    const { inspectChangedFiles } = await loadGuardModule()
     const violations = inspectChangedFiles([
       'src/lib/workers/image.worker.ts',
       'tests/system/generate-image.system.test.ts',
@@ -19,7 +28,8 @@ describe('changed-file-test-impact-guard', () => {
     expect(violations).toEqual([])
   })
 
-  it('accepts provider changes when provider contract coverage is updated', () => {
+  it('accepts provider changes when provider contract coverage is updated', async () => {
+    const { inspectChangedFiles } = await loadGuardModule()
     const violations = inspectChangedFiles([
       'src/lib/model-gateway/openai-compat/image.ts',
       'tests/unit/model-gateway/openai-compat-template-image-output-urls.test.ts',

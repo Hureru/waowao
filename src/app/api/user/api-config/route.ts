@@ -188,12 +188,14 @@ const PRICING_PROVIDER_ALIASES: Readonly<Record<string, string>> = {
 const OPTIONAL_PRICING_PROVIDER_KEYS = new Set([
   'openai-compatible',
   'gemini-compatible',
+  'kie',
   'bailian',
   'siliconflow',
 ])
 const OFFICIAL_ONLY_PROVIDER_KEYS = new Set(['bailian', 'siliconflow'])
 const RETIRED_PROVIDER_KEYS = new Set(['qwen'])
 const MINIMAX_OFFICIAL_BASE_URL = 'https://api.minimaxi.com/v1'
+const KIE_OFFICIAL_BASE_URL = 'https://api.kie.ai'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -219,6 +221,23 @@ function normalizeMinimaxProviderBaseUrl(input: {
     })
   }
   return MINIMAX_OFFICIAL_BASE_URL
+}
+
+function normalizeKieProviderBaseUrl(input: {
+  providerId: string
+  baseUrl?: string
+  strict: boolean
+  field: string
+}): string | undefined {
+  if (getProviderKey(input.providerId) !== 'kie') return input.baseUrl
+  if (!input.baseUrl || input.baseUrl === KIE_OFFICIAL_BASE_URL) return KIE_OFFICIAL_BASE_URL
+  if (input.strict) {
+    throw new ApiError('INVALID_PARAMS', {
+      code: 'PROVIDER_BASEURL_INVALID',
+      field: input.field,
+    })
+  }
+  return KIE_OFFICIAL_BASE_URL
 }
 
 function formatPriceAmount(amount: number): string {
@@ -472,6 +491,7 @@ function resolveProviderGatewayRoute(
   const providerKey = getProviderKey(providerId)
   const isOpenAICompatibleProvider = providerKey === 'openai-compatible'
   const isGeminiCompatibleProvider = providerKey === 'gemini-compatible'
+  const isKieProvider = providerKey === 'kie'
 
   if (rawGatewayRoute !== undefined && !isGatewayRoute(rawGatewayRoute)) {
     throw new ApiError('INVALID_PARAMS', {
@@ -489,6 +509,15 @@ function resolveProviderGatewayRoute(
   }
 
   if (isGeminiCompatibleProvider) {
+    if (rawGatewayRoute === 'openai-compat') {
+      throw new ApiError('INVALID_PARAMS', {
+        code: 'PROVIDER_GATEWAY_ROUTE_INVALID',
+      })
+    }
+    return 'official'
+  }
+
+  if (isKieProvider) {
     if (rawGatewayRoute === 'openai-compat') {
       throw new ApiError('INVALID_PARAMS', {
         code: 'PROVIDER_GATEWAY_ROUTE_INVALID',
@@ -878,7 +907,13 @@ function normalizeProvidersInput(rawProviders: unknown): StoredProvider[] {
         field: `providers[${index}].apiMode`,
       })
     }
-    if (getProviderKey(id) === 'gemini-compatible' && apiModeRaw === 'openai-official') {
+    if (providerKey === 'gemini-compatible' && apiModeRaw === 'openai-official') {
+      throw new ApiError('INVALID_PARAMS', {
+        code: 'PROVIDER_APIMODE_INVALID',
+        field: `providers[${index}].apiMode`,
+      })
+    }
+    if (providerKey === 'kie' && apiModeRaw !== undefined) {
       throw new ApiError('INVALID_PARAMS', {
         code: 'PROVIDER_APIMODE_INVALID',
         field: `providers[${index}].apiMode`,
@@ -904,9 +939,14 @@ function normalizeProvidersInput(rawProviders: unknown): StoredProvider[] {
       })
     }
 
-    const baseUrl = normalizeMinimaxProviderBaseUrl({
+    const baseUrl = normalizeKieProviderBaseUrl({
       providerId: id,
-      baseUrl: readTrimmedString(item.baseUrl) || undefined,
+      baseUrl: normalizeMinimaxProviderBaseUrl({
+        providerId: id,
+        baseUrl: readTrimmedString(item.baseUrl) || undefined,
+        strict: true,
+        field: `providers[${index}].baseUrl`,
+      }),
       strict: true,
       field: `providers[${index}].baseUrl`,
     })
@@ -1441,6 +1481,12 @@ function parseStoredProviders(rawProviders: string | null | undefined): StoredPr
           field: `customProviders[${index}].apiMode`,
         })
       }
+      if (providerKey === 'kie') {
+        throw new ApiError('INVALID_PARAMS', {
+          code: 'PROVIDER_APIMODE_INVALID',
+          field: `customProviders[${index}].apiMode`,
+        })
+      }
       apiMode = apiModeRaw
     }
 
@@ -1461,9 +1507,14 @@ function parseStoredProviders(rawProviders: string | null | undefined): StoredPr
       })
     }
 
-    const baseUrl = normalizeMinimaxProviderBaseUrl({
+    const baseUrl = normalizeKieProviderBaseUrl({
       providerId: id,
-      baseUrl: readTrimmedString(raw.baseUrl) || undefined,
+      baseUrl: normalizeMinimaxProviderBaseUrl({
+        providerId: id,
+        baseUrl: readTrimmedString(raw.baseUrl) || undefined,
+        strict: false,
+        field: `customProviders[${index}].baseUrl`,
+      }),
       strict: false,
       field: `customProviders[${index}].baseUrl`,
     })
@@ -1705,6 +1756,13 @@ export const GET = apiHandler(async () => {
     { type: 'video', modelId: 'veo-3.0-fast-generate-001', name: 'Veo 3.0 Fast' },
     { type: 'video', modelId: 'veo-2.0-generate-001', name: 'Veo 2.0' },
   ]
+  const KIE_STARTER_PRESETS: { type: UnifiedModelType; modelId: string; name: string }[] = [
+    { type: 'image', modelId: 'google/imagen4', name: 'Imagen 4' },
+    { type: 'image', modelId: 'google/imagen4-fast', name: 'Imagen 4 Fast' },
+    { type: 'video', modelId: 'sora-2-image-to-video', name: 'Sora 2 I2V' },
+    { type: 'video', modelId: 'sora-2-text-to-video', name: 'Sora 2 T2V' },
+    { type: 'video', modelId: 'kling-2.6/image-to-video', name: 'Kling 2.6 I2V' },
+  ]
   const savedModelKeys = new Set(pricedModels.map((m) => m.modelKey))
   const disabledPresets: (StoredModel & { enabled: false })[] = []
   for (const p of providers) {
@@ -1721,6 +1779,24 @@ export const GET = apiHandler(async () => {
         provider: p.id,
         price: 0,
         // alias 回退自动从 google catalog 获取 capabilities
+        capabilities: findBuiltinCapabilities(preset.type, p.id, preset.modelId),
+      }
+      disabledPresets.push({ ...withDisplayPricing(base, pricingDisplay), enabled: false })
+    }
+  }
+  for (const p of providers) {
+    if (getProviderKey(p.id) !== 'kie') continue
+    for (const preset of KIE_STARTER_PRESETS) {
+      const modelKey = composeModelKey(p.id, preset.modelId)
+      if (!modelKey || savedModelKeys.has(modelKey)) continue
+      savedModelKeys.add(modelKey)
+      const base: StoredModel = {
+        modelId: preset.modelId,
+        modelKey,
+        name: preset.name,
+        type: preset.type,
+        provider: p.id,
+        price: 0,
         capabilities: findBuiltinCapabilities(preset.type, p.id, preset.modelId),
       }
       disabledPresets.push({ ...withDisplayPricing(base, pricingDisplay), enabled: false })

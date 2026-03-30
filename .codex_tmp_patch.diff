@@ -1,0 +1,20 @@
+*** Begin Patch
+*** Update File: tests/unit/guards/api-route-contract-guard.test.ts
+@@
+ const importModule = new Function('specifier', 'return import(specifier)') as (
+   specifier: string,
+ ) => Promise<Record<string, unknown>>
++
++type ApiRouteContractGuardModule = {
++  API_HANDLER_ALLOWLIST: Set<string>
++  PUBLIC_ROUTE_ALLOWLIST: Set<string>
++  inspectRouteContract: (relPath: string, content: string) => string[]
++}
+ 
+ async function loadGuardModule() {
+-  return await importModule(new URL('../../../scripts/guards/api-route-contract-guard.mjs', import.meta.url).href)
++  return (await importModule(
++    new URL('../../../scripts/guards/api-route-contract-guard.mjs', import.meta.url).href,
++  )) as ApiRouteContractGuardModule
+ }
+*** End Patch
