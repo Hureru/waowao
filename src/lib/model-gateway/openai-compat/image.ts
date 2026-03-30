@@ -6,6 +6,7 @@ import {
   resolveOpenAICompatClientConfig,
   toUploadFile,
 } from './common'
+import type { OpenAICompatClientConfig } from '../types'
 
 type OpenAIImageResponseFormat = 'url' | 'b64_json'
 type OpenAIImageOutputFormat = 'png' | 'jpeg' | 'webp'
@@ -230,4 +231,53 @@ export async function generateImageViaOpenAICompat(request: OpenAICompatImageReq
     }
   }
   throw new Error('OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data returned')
+}
+
+function extractImageUrlFromChatContent(content: string): string | null {
+  // markdown image: ![...](url)
+  const mdMatch = content.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/)
+  if (mdMatch) return mdMatch[1]
+  // plain url
+  const urlMatch = content.match(/https?:\/\/\S+/)
+  if (urlMatch) return urlMatch[0]
+  // base64 data url
+  if (content.startsWith('data:image/')) return content.trim()
+  return null
+}
+
+export async function generateImageViaChatCompletions(
+  request: OpenAICompatImageRequest,
+): Promise<GenerateResult> {
+  const { userId, providerId, modelId, prompt, options = {} } = request
+  const config: OpenAICompatClientConfig = await resolveOpenAICompatClientConfig(userId, providerId)
+  const client = createOpenAICompatClient(config)
+  const normalizedModelId = resolveModelId(modelId, options as Record<string, unknown>)
+
+  const messages: { role: 'user' | 'assistant'; content: string }[] = [
+    { role: 'user', content: prompt },
+  ]
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await client.chat.completions.create({
+      model: normalizedModelId,
+      messages,
+      stream: false,
+    })
+
+    const content = response.choices?.[0]?.message?.content ?? ''
+    const imageUrl = extractImageUrlFromChatContent(content)
+    if (imageUrl) {
+      if (imageUrl.startsWith('data:image/')) {
+        const base64 = imageUrl.split(',')[1] ?? ''
+        return { success: true, imageBase64: base64, imageUrl }
+      }
+      return { success: true, imageUrl }
+    }
+
+    // 模型返回了文字但没有图片，继续对话催促生成
+    messages.push({ role: 'assistant', content })
+    messages.push({ role: 'user', content: '好的，请直接生成图片。' })
+  }
+
+  throw new Error('OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data in chat response after retries')
 }

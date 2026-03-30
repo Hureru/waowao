@@ -14,6 +14,7 @@ import { getProviderConfig, getProviderKey, resolveModelSelection } from './api-
 import {
     generateImageViaOpenAICompat,
     generateImageViaOpenAICompatTemplate,
+    generateImageViaChatCompletions,
     generateVideoViaOpenAICompat,
     generateVideoViaOpenAICompatTemplate,
     resolveModelGatewayRoute,
@@ -106,10 +107,8 @@ export async function generateImage(
     if (gatewayRoute === 'openai-compat') {
         const compatTemplate = selection.compatMediaTemplate
         if (providerKey === 'openai-compatible' && !compatTemplate) {
-            throw new Error(`MODEL_COMPAT_MEDIA_TEMPLATE_REQUIRED: ${selection.modelKey}`)
-        }
-        if (compatTemplate) {
-            return await generateImageViaOpenAICompatTemplate({
+            const { aspectRatio: _aspectRatio, size: _size, ...chatOptions } = generatorOptions
+            return await generateImageViaChatCompletions({
                 userId,
                 providerId: selection.provider,
                 modelId: selection.modelId,
@@ -117,14 +116,49 @@ export async function generateImage(
                 prompt,
                 referenceImages,
                 options: {
-                    ...generatorOptions,
+                    ...chatOptions,
                     provider: selection.provider,
                     modelId: selection.modelId,
                     modelKey: selection.modelKey,
                 },
                 profile: 'openai-compatible',
-                template: compatTemplate,
             })
+        }
+        if (compatTemplate) {
+            try {
+                return await generateImageViaOpenAICompatTemplate({
+                    userId,
+                    providerId: selection.provider,
+                    modelId: selection.modelId,
+                    modelKey: selection.modelKey,
+                    prompt,
+                    referenceImages,
+                    options: {
+                        ...generatorOptions,
+                        provider: selection.provider,
+                        modelId: selection.modelId,
+                        modelKey: selection.modelKey,
+                    },
+                    profile: 'openai-compatible',
+                    template: compatTemplate,
+                })
+            } catch {
+                return await generateImageViaChatCompletions({
+                    userId,
+                    providerId: selection.provider,
+                    modelId: selection.modelId,
+                    modelKey: selection.modelKey,
+                    prompt,
+                    referenceImages,
+                    options: {
+                        ...generatorOptions,
+                        provider: selection.provider,
+                        modelId: selection.modelId,
+                        modelKey: selection.modelKey,
+                    },
+                    profile: 'openai-compatible',
+                })
+            }
         }
 
         // OpenAI 兼容模式：将 aspectRatio 转换为 size
