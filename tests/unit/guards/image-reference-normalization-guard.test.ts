@@ -1,22 +1,11 @@
 import { describe, expect, it } from 'vitest'
-
-type ImageReferenceNormalizationGuardModule = {
-  NORMALIZATION_HELPER_ALLOWLIST: Set<string>
-  inspectImageReferenceNormalization: (relPath: string, content: string) => string[]
-}
-
-async function loadGuardModule() {
-  const moduleHref = new URL('../../../scripts/guards/image-reference-normalization-guard.mjs', import.meta.url).href
-  return (await import(/* @vite-ignore */ moduleHref)) as ImageReferenceNormalizationGuardModule
-}
+import {
+  NORMALIZATION_HELPER_ALLOWLIST,
+  inspectImageReferenceNormalization,
+} from '../../../scripts/guards/image-reference-normalization-guard-core'
 
 describe('image reference normalization guard', () => {
   it('allows shared helper exceptions explicitly', async () => {
-    const {
-      NORMALIZATION_HELPER_ALLOWLIST,
-      inspectImageReferenceNormalization,
-    } = await loadGuardModule()
-
     expect(NORMALIZATION_HELPER_ALLOWLIST.has('src/lib/workers/handlers/image-task-handler-shared.ts')).toBe(true)
     expect(
       inspectImageReferenceNormalization(
@@ -27,7 +16,6 @@ describe('image reference normalization guard', () => {
   })
 
   it('passes handlers that normalize reference images before generation', async () => {
-    const { inspectImageReferenceNormalization } = await loadGuardModule()
     const content = `
       import { normalizeReferenceImagesForGeneration } from '@/lib/media/outbound-image'
       async function run() {
@@ -46,7 +34,6 @@ describe('image reference normalization guard', () => {
   })
 
   it('flags handlers that send referenceImages without normalization markers', async () => {
-    const { inspectImageReferenceNormalization } = await loadGuardModule()
     const content = `
       async function run() {
         return await resolveImageSourceFromGeneration(job, {
