@@ -107,22 +107,7 @@ export async function generateImage(
     if (gatewayRoute === 'openai-compat') {
         const compatTemplate = selection.compatMediaTemplate
         if (providerKey === 'openai-compatible' && !compatTemplate) {
-            const { aspectRatio: _aspectRatio, size: _size, ...chatOptions } = generatorOptions
-            return await generateImageViaChatCompletions({
-                userId,
-                providerId: selection.provider,
-                modelId: selection.modelId,
-                modelKey: selection.modelKey,
-                prompt,
-                referenceImages,
-                options: {
-                    ...chatOptions,
-                    provider: selection.provider,
-                    modelId: selection.modelId,
-                    modelKey: selection.modelKey,
-                },
-                profile: 'openai-compatible',
-            })
+            throw new Error(`MODEL_COMPAT_MEDIA_TEMPLATE_REQUIRED: ${selection.modelKey}`)
         }
         if (compatTemplate) {
             try {

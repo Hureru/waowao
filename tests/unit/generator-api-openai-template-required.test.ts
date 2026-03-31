@@ -22,6 +22,7 @@ const generateImageViaOpenAICompatMock = vi.hoisted(() => vi.fn(async () => ({ s
 const generateVideoViaOpenAICompatMock = vi.hoisted(() => vi.fn(async () => ({ success: true, videoUrl: 'video' })))
 const generateImageViaOpenAICompatTemplateMock = vi.hoisted(() => vi.fn(async () => ({ success: true, imageUrl: 'image' })))
 const generateVideoViaOpenAICompatTemplateMock = vi.hoisted(() => vi.fn(async () => ({ success: true, videoUrl: 'video' })))
+const generateImageViaChatCompletionsMock = vi.hoisted(() => vi.fn(async () => ({ success: true, imageUrl: 'image' })))
 
 vi.mock('@/lib/api-config', () => ({
   resolveModelSelection: resolveModelSelectionMock,
@@ -35,6 +36,7 @@ vi.mock('@/lib/model-gateway', () => ({
   generateVideoViaOpenAICompat: generateVideoViaOpenAICompatMock,
   generateImageViaOpenAICompatTemplate: generateImageViaOpenAICompatTemplateMock,
   generateVideoViaOpenAICompatTemplate: generateVideoViaOpenAICompatTemplateMock,
+  generateImageViaChatCompletions: generateImageViaChatCompletionsMock,
 }))
 
 vi.mock('@/lib/generators/factory', () => ({
@@ -84,6 +86,7 @@ describe('generator-api requires compat media template for openai-compatible med
 
     expect(generateImageViaOpenAICompatMock).not.toHaveBeenCalled()
     expect(generateImageViaOpenAICompatTemplateMock).not.toHaveBeenCalled()
+    expect(generateImageViaChatCompletionsMock).not.toHaveBeenCalled()
   })
 
   it('throws for video model without compatMediaTemplate', async () => {
