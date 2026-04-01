@@ -68,7 +68,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
 
     const t = useTranslations('assetHub')
     const tAssets = useTranslations('assets')
-    const { count: generationCount, setCount: setGenerationCount } = useImageGenerationCount('character')
+    const { count: generationCount, countRef: generationCountRef, setCount: setGenerationCount } = useImageGenerationCount('character')
     const fileInputRef = useRef<HTMLInputElement>(null)
     const voiceInputRef = useRef<HTMLInputElement>(null)
 
@@ -121,7 +121,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
         : null
 
     // 生成图片
-    const handleGenerate = (count = generationCount) => {
+    const handleGenerate = (count = generationCountRef.current) => {
         generateImage.mutate(
             {
                 characterId: character.id,

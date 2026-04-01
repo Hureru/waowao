@@ -76,7 +76,7 @@ export default function CharacterCard({
   // 🔥 使用 mutation
   const uploadImage = useUploadProjectCharacterImage(projectId)
   const t = useTranslations('assets')
-  const { count: generationCount, setCount: setGenerationCount } = useImageGenerationCount('character')
+  const { count: generationCount, countRef: generationCountRef, setCount: setGenerationCount } = useImageGenerationCount('character')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingUploadIndex, setPendingUploadIndex] = useState<number | undefined>(undefined)
   const [showDeleteMenu, setShowDeleteMenu] = useState(false)
@@ -229,7 +229,7 @@ export default function CharacterCard({
           value={generationCount}
           options={getImageGenerationCountOptions('character')}
           onValueChange={setGenerationCount}
-          onClick={() => onRegenerate(generationCount)}
+          onClick={() => onRegenerate(generationCountRef.current)}
           disabled={isAppearanceTaskRunning || isAnyTaskRunning || uploadImage.isPending}
           ariaLabel={t('image.regenCountAriaLabel')}
           className="inline-flex h-6 items-center gap-0.5 rounded px-1 hover:bg-[var(--glass-tone-info-bg)] transition-colors disabled:opacity-50"

@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import type { Character, Project } from '@/types/project'
 import { queryKeys } from '../keys'
 import type { ProjectAssetsData } from '../hooks/useProjectAssets'
+import type { AssetSummary } from '@/lib/assets/contracts'
 import { apiFetch } from '@/lib/api-fetch'
 import {
     clearTaskTargetOverlay,
@@ -16,7 +17,7 @@ import {
 } from './mutation-shared'
 
 interface SelectProjectCharacterImageContext {
-    previousAssets: ProjectAssetsData | undefined
+    previousAssets: AssetSummary[] | undefined
     previousProject: Project | undefined
     targetKey: string
     requestId: number
@@ -64,6 +65,32 @@ function applyCharacterSelectionToAssets(
         ...previous,
         characters: applyCharacterSelectionToCharacters(previous.characters || [], characterId, appearanceId, selectedIndex),
     }
+}
+
+function applyCharacterSelectionToRawAssets(
+    previous: AssetSummary[] | undefined,
+    characterId: string,
+    appearanceId: string,
+    selectedIndex: number | null,
+): AssetSummary[] | undefined {
+    if (!previous) return previous
+    return previous.map((asset) => {
+        if (asset.kind !== 'character' || asset.id !== characterId) return asset
+        return {
+            ...asset,
+            variants: asset.variants.map((variant) => {
+                if (variant.id !== appearanceId) return variant
+                return {
+                    ...variant,
+                    selectionState: { selectedRenderIndex: selectedIndex },
+                    renders: variant.renders.map((render) => ({
+                        ...render,
+                        isSelected: render.index === selectedIndex,
+                    })),
+                }
+            }),
+        }
+    })
 }
 
 function applyCharacterSelectionToProject(
@@ -227,17 +254,17 @@ export function useSelectProjectCharacterImage(projectId: string) {
             const requestId = (latestRequestIdByTargetRef.current[targetKey] ?? 0) + 1
             latestRequestIdByTargetRef.current[targetKey] = requestId
 
-            const assetsQueryKey = queryKeys.projectAssets.all(projectId)
+            const rawAssetsQueryKey = queryKeys.assets.list({ scope: 'project', projectId })
             const projectQueryKey = queryKeys.projectData(projectId)
 
-            await queryClient.cancelQueries({ queryKey: assetsQueryKey })
+            await queryClient.cancelQueries({ queryKey: rawAssetsQueryKey })
             await queryClient.cancelQueries({ queryKey: projectQueryKey })
 
-            const previousAssets = queryClient.getQueryData<ProjectAssetsData>(assetsQueryKey)
+            const previousAssets = queryClient.getQueryData<AssetSummary[]>(rawAssetsQueryKey)
             const previousProject = queryClient.getQueryData<Project>(projectQueryKey)
 
-            queryClient.setQueryData<ProjectAssetsData | undefined>(assetsQueryKey, (previous) =>
-                applyCharacterSelectionToAssets(previous, variables.characterId, variables.appearanceId, variables.imageIndex),
+            queryClient.setQueryData<AssetSummary[] | undefined>(rawAssetsQueryKey, (previous) =>
+                applyCharacterSelectionToRawAssets(previous, variables.characterId, variables.appearanceId, variables.imageIndex),
             )
             queryClient.setQueryData<Project | undefined>(projectQueryKey, (previous) =>
                 applyCharacterSelectionToProject(previous, variables.characterId, variables.appearanceId, variables.imageIndex),
@@ -254,7 +281,7 @@ export function useSelectProjectCharacterImage(projectId: string) {
             if (!context) return
             const latestRequestId = latestRequestIdByTargetRef.current[context.targetKey]
             if (latestRequestId !== context.requestId) return
-            queryClient.setQueryData(queryKeys.projectAssets.all(projectId), context.previousAssets)
+            queryClient.setQueryData(queryKeys.assets.list({ scope: 'project', projectId }), context.previousAssets)
             queryClient.setQueryData(queryKeys.projectData(projectId), context.previousProject)
         },
         onSettled: (_data, _error, variables) => {
