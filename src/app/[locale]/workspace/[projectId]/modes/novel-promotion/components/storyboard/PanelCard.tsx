@@ -131,7 +131,7 @@ export default function PanelCard({
         />
         {/* 插入分镜/镜头变体按钮 - 在图片区域右侧垂直居中 */}
         {(onInsertAfter || onVariant) && (
-          <div className="absolute -right-[22px] top-1/2 -translate-y-1/2 z-50">
+          <div className="absolute -right-[22px] top-1/2 -translate-y-1/2 z-10">
             <PanelActionButtons
               onInsertPanel={onInsertAfter || (() => { })}
               onVariant={onVariant || (() => { })}

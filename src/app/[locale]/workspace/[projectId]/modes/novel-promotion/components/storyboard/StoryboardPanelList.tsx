@@ -106,7 +106,7 @@ export default function StoryboardPanelList({
           <div
             key={panel.id || index}
             className="relative group/panel h-full"
-            style={{ zIndex: textPanels.length - index }}
+            style={{ zIndex: Math.max(1, Math.min(12, textPanels.length - index)) }}
           >
             <PanelCard
               panel={panel}

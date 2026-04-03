@@ -7,6 +7,7 @@ import type {
   Location,
   NovelPromotionClip,
 } from '@/types/project'
+import { parseClipAssets } from '../../script-view/clip-asset-utils'
 import type { SelectedAsset } from './useImageGeneration'
 
 export function getErrorMessage(error: unknown, fallback: string): string {
@@ -33,10 +34,11 @@ export function buildDefaultAssetsForClip({
 
   if (clip.characters) {
     try {
-      const characterNames: string[] = JSON.parse(clip.characters)
-      for (const characterName of characterNames) {
+      const { charNames } = parseClipAssets({ characters: clip.characters })
+      for (const characterName of charNames) {
+        const normalizedCharacterName = characterName.toLowerCase()
         const character = characters.find(
-          (item) => item.name.toLowerCase() === characterName.toLowerCase(),
+          (item) => item.name.toLowerCase() === normalizedCharacterName,
         )
         if (!character?.appearances) continue
 

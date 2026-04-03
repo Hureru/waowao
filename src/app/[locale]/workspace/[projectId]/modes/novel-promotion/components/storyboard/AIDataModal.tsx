@@ -81,7 +81,7 @@ export default function AIDataModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-[var(--glass-overlay)] backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bg-[var(--glass-bg-surface)] rounded-2xl shadow-2xl w-[90vw] max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
